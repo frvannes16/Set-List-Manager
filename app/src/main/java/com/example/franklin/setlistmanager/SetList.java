@@ -9,13 +9,18 @@ import android.text.format.Time;
 public class SetList {
     private String name;
     private Time date_created, date_modified;
+    private String ownerUID;
 
-    public SetList(String name){
+    public SetList() {
+    }
+
+    public SetList(String name, String ownerID){
         this.name = name;
         this.date_modified = new Time();
         this.date_created = new Time();
         this.date_modified.setToNow();
         this.date_created.setToNow();
+        this.ownerUID = ownerID;
     }
 
     void update() {
@@ -32,5 +37,25 @@ public class SetList {
 
     public Time getDate_modified() {
         return date_modified;
+    }
+
+    public String getOwnerUID() {
+        return ownerUID;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setDate_created(Time date_created) {
+        this.date_created = date_created;
+    }
+
+    public void setDate_modified(Time date_modified) {
+        this.date_modified = date_modified;
+    }
+
+    public void setOwnerUID(String ownerUID) {
+        this.ownerUID = ownerUID;
     }
 }
