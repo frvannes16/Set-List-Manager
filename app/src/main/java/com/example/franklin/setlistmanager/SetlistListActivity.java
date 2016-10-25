@@ -1,25 +1,23 @@
 package com.example.franklin.setlistmanager;
 
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.firebase.ui.database.FirebaseListAdapter;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
-import com.google.firebase.database.ValueEventListener;
 
-import java.util.ArrayList;
+public class SetlistListActivity extends AppCompatActivity
+    implements AdapterView.OnItemClickListener{
 
-public class SetlistListActivity extends AppCompatActivity {
-
+    public static final String SETLIST_REF = "SETLIST_REF";
     private String TAG = "SETLIST_LIST_ACTIVITY";
 
     // Firebase
@@ -27,46 +25,65 @@ public class SetlistListActivity extends AppCompatActivity {
     private DatabaseReference myRef;
 
     // Data
-    private ArrayList<SetList> setlists = new ArrayList<>(0);
-    //    private ListView mSetlistLV;
-    private TextView mSetListName;
+    private SetListAdapter mAdapter;
+
+    // UI
+    private ListView mSetlistLV;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_setlist_list);
+
+        // Firebase setup
         database = FirebaseDatabase.getInstance();
-        myRef =  database.getReference("setlists");
-//        mSetlistLV = (ListView) findViewById(R.id.setlist_LV);
-        mSetListName = (TextView) findViewById(R.id.setlist_name);
-        Query userSetLists = myRef.child(FirebaseAuth.getInstance().getCurrentUser().getUid()).limitToFirst(1);
-        userSetLists.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                SetList sl = null;
-                for(DataSnapshot snap : dataSnapshot.getChildren()){
-                    sl = snap.getValue(SetList.class);
-                }
+        myRef = database.getReference("setlists");
+        Query userSetLists = myRef.child(FirebaseAuth.getInstance().getCurrentUser().getUid());
 
-                if(sl == null){
-                    // do nothing
-                    return;
-                } else {
-                    mSetListName.setText(sl.getName());
-                }
-            }
+        // UI setup
+        mSetlistLV = (ListView) findViewById(R.id.setlist_LV);
+        mSetlistLV.setOnItemClickListener(this);
+        mAdapter = new SetListAdapter(userSetLists);
 
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                Log.d(TAG, "DB cancelled:" + databaseError.getMessage());
-            }
-        });
+        mSetlistLV.setAdapter(mAdapter);
 
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mAdapter.cleanup();
     }
 
     public void addSetlist(View view) {
         Intent createSetList = new Intent(this, NewSetListActivity.class);
         startActivity(createSetList);
+    }
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        String refString = mAdapter.getRef(position).toString();
+        Intent intent = new Intent(this, SetlistActivity.class);
+        intent.putExtra(SETLIST_REF, refString);
+        startActivity(intent);
+    }
+
+    private class SetListAdapter extends FirebaseListAdapter<SetList> {
+
+        SetListAdapter(Query ref) {
+            super(SetlistListActivity.this, SetList.class, android.R.layout.simple_list_item_1, ref);
+        }
+
+        SetListAdapter(DatabaseReference ref) {
+            super(SetlistListActivity.this, SetList.class, android.R.layout.simple_list_item_1, ref);
+        }
+
+        @Override
+        protected void populateView(View v, SetList setlist, int position) {
+            ((TextView) v.findViewById(android.R.id.text1)).setText(setlist.getName());
+        }
+
     }
 }
