@@ -1,4 +1,4 @@
-package com.example.franklin.setlistmanager;
+package com.example.franklin.setlistmanager.helpers;
 
 /**
  * Created by Franklin on 10/22/2016.

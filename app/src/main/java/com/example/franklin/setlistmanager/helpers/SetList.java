@@ -1,4 +1,4 @@
-package com.example.franklin.setlistmanager;
+package com.example.franklin.setlistmanager.helpers;
 
 import android.text.format.Time;
 

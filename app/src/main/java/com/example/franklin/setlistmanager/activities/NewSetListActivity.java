@@ -1,4 +1,4 @@
-package com.example.franklin.setlistmanager;
+package com.example.franklin.setlistmanager.activities;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -8,6 +8,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.franklin.setlistmanager.R;
+import com.example.franklin.setlistmanager.helpers.SetList;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
