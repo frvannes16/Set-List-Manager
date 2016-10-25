@@ -46,9 +46,8 @@ public class SetlistListActivity extends AppCompatActivity
         mSetlistLV.setOnItemClickListener(this);
         mAdapter = new SetListAdapter(userSetLists);
 
-        mSetlistLV.setAdapter(mAdapter);
-
-
+        mSetlistLV.setAdapter(mAdapter);  // Pushes Firebase ref to ListView
+        // Ready
     }
 
     @Override
