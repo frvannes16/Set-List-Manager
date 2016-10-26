@@ -1,6 +1,8 @@
 package com.example.franklin.setlistmanager.activities;
 
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -12,7 +14,6 @@ import android.widget.TextView;
 
 import com.example.franklin.setlistmanager.R;
 import com.example.franklin.setlistmanager.helpers.MetronomeTask;
-import com.example.franklin.setlistmanager.helpers.SetList;
 import com.example.franklin.setlistmanager.helpers.Song;
 import com.firebase.ui.database.FirebaseListAdapter;
 import com.google.firebase.database.DatabaseReference;
@@ -24,9 +25,11 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class SetlistActivity extends AppCompatActivity
-        implements AdapterView.OnItemClickListener {
+        implements AdapterView.OnItemClickListener,
+        AdapterView.OnItemLongClickListener {
 
     private static final String TAG = "SetListActivity:";
+    public static final int REQUEST_CODE = 1001;
 
     // Metronome
     MetronomeTask metronome;
@@ -74,7 +77,7 @@ public class SetlistActivity extends AppCompatActivity
         mAdapter = new SongListAdapter(setlistRef);
         mSongsLV.setAdapter(mAdapter);
         mSongsLV.setOnItemClickListener(this);
-        // TODO: setOnItemLongClickListener and make it the delete option.
+        mSongsLV.setOnItemLongClickListener(this);
 
 
 
@@ -107,6 +110,33 @@ public class SetlistActivity extends AppCompatActivity
 
     }
 
+    @Override
+    public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+        if (executor != null){
+            executor.shutdown();
+        }
+        final DatabaseReference songToDeleteRef = mAdapter.getRef(position);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.dialog_delete_song)
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        songToDeleteRef.removeValue();
+                    }
+                })
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // Do nothing
+                    }
+                });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        // create the AlertDialog object
+        return true;
+    }
+
+
     private class SongListAdapter extends FirebaseListAdapter<Song> {
 
         SongListAdapter(Query ref) {
@@ -124,8 +154,5 @@ public class SetlistActivity extends AppCompatActivity
                     String.format(Locale.US, "BPM: %d", song.getBpm())
             );
         }
-
-
-
     }
 }

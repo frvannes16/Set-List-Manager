@@ -3,6 +3,7 @@ package com.example.franklin.setlistmanager.activities;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -47,8 +48,10 @@ public class SetlistListActivity extends AppCompatActivity
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null){
             Toast.makeText(this, "You are not logged in.", Toast.LENGTH_LONG).show();
+            Log.d(TAG, "onCreate: User not logged in");
             Intent intent = new Intent(this, LoginActivity.class);
             startActivity(intent);
+            return;
         }
         Query userSetLists = myRef.child(user.getUid());
 

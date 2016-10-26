@@ -12,10 +12,12 @@ import android.util.Log;
 
 public class MetronomeTask implements Runnable {
 
+    private static final int NUM_MEASURES = 4;
     private static String TAG = "MetronomeTask:";
     private static final int LOW_TONE_FREQUENCY = 1500;
     private static final int HIGH_TONE_FREQUENCY = 2000;
     public static final int DURATION = 44100;  // in bits.
+
     // Consts
     private static long NANOSECONDS_IN_MINUTE = 60000000000L;
 
@@ -85,7 +87,7 @@ public class MetronomeTask implements Runnable {
             mAudioTrack.setStereoVolume(AudioTrack.getMaxVolume(), AudioTrack.getMaxVolume());
             Log.d(TAG, "Playing");
             mAudioTrack.play();
-            for (int i = 0; i < num * 4; i++) {
+            for (int i = 0; i < num * NUM_MEASURES; i++) {
                 short[] mBuffer = (i % num == 0) ? mBleep : mBlip;
                 mAudioTrack.write(mBuffer, 0, mBuffer.length);
             }
