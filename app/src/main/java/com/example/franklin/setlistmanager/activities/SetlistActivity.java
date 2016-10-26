@@ -3,35 +3,129 @@ package com.example.franklin.setlistmanager.activities;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.EditText;
+import android.widget.ListView;
+import android.widget.TextView;
 
 import com.example.franklin.setlistmanager.R;
 import com.example.franklin.setlistmanager.helpers.MetronomeTask;
+import com.example.franklin.setlistmanager.helpers.SetList;
+import com.example.franklin.setlistmanager.helpers.Song;
+import com.firebase.ui.database.FirebaseListAdapter;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 
+import java.util.Locale;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class SetlistActivity extends AppCompatActivity {
+public class SetlistActivity extends AppCompatActivity
+        implements AdapterView.OnItemClickListener {
 
+    private static final String TAG = "SetListActivity:";
+
+    // Metronome
     MetronomeTask metronome;
-    long interval;
-
     ScheduledThreadPoolExecutor executor;
+
+    // Firebase
+    DatabaseReference setlistRef;
+    SongListAdapter mAdapter;
+
+
+    //UI
+    ListView mSongsLV;
+    EditText mSongNameET;
+    EditText mBPMET;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_setlist);
-        Intent intent = getIntent();
-        String refString = (String) intent.getExtras().get(SetlistListActivity.SETLIST_REF);
 
-        executor = new ScheduledThreadPoolExecutor(1);
-        metronome = new MetronomeTask(120);
-        interval = metronome.getInterval();
+        // Get intent information to find which set list we're in.
+        Intent intent = getIntent();
+        String setlistString = (String) intent.getExtras().get(SetlistListActivity.SETLIST_REF);
+        String userString = (String) intent.getExtras().get(SetlistListActivity.USER_REF);
+        String ref = String.format("/setlists/%s/%s/songs", setlistString, userString);
+        Log.d(TAG, String.format(
+                "onCreate: refString is setlists/%s/%s/songs",
+                setlistString,
+                userString));
+
+        // UI setup
+        mSongsLV = (ListView) findViewById(R.id.songs_LV);
+        mSongNameET = (EditText) findViewById(R.id.song_name_ET);
+        mBPMET = (EditText) findViewById(R.id.bpm_ET);
+
+        // Make the song name the first editable field
+        mSongNameET.requestFocus();
+
+
+        // Init Firebase
+        setlistRef = FirebaseDatabase.getInstance().getReference().child(ref);
+        Log.d(TAG, setlistRef.toString());
+
+        mAdapter = new SongListAdapter(setlistRef);
+        mSongsLV.setAdapter(mAdapter);
+        mSongsLV.setOnItemClickListener(this);
+        // TODO: setOnItemLongClickListener and make it the delete option.
+
+
+
+
+    }
+
+    public void addSong(View view) {
+        String name = mSongNameET.getText().toString();
+        int bpm = Integer.parseInt(mBPMET.getText().toString());
+
+        // Clear UI
+        mBPMET.setText("");
+        mSongNameET.setText("");
+        Song newSong = new Song(name, bpm);
+        setlistRef.push().setValue(newSong);
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        executor.scheduleAtFixedRate(metronome, 0, interval, TimeUnit.NANOSECONDS);
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        // if executor already exists, then stop it.
+        if (executor != null){
+            executor.shutdown();
+        }
+
+        // Start Metronome
+        int bpm = mAdapter.getItem(position).getBpm();
+        metronome = new MetronomeTask(bpm);
+        executor = new ScheduledThreadPoolExecutor(1);
+        executor.schedule(metronome, 0, TimeUnit.NANOSECONDS);
+
+    }
+
+    private class SongListAdapter extends FirebaseListAdapter<Song> {
+
+        SongListAdapter(Query ref) {
+            super(SetlistActivity.this, Song.class, android.R.layout.two_line_list_item, ref);
+        }
+
+        SongListAdapter(DatabaseReference ref) {
+            super(SetlistActivity.this, Song.class, android.R.layout.two_line_list_item, ref);
+        }
+
+        @Override
+        protected void populateView(View v, Song song, int position) {
+            ((TextView) v.findViewById(android.R.id.text1)).setText(song.getName());
+            ((TextView) v.findViewById(android.R.id.text2)).setText(
+                    String.format(Locale.US, "BPM: %d", song.getBpm())
+            );
+        }
+
+
+
     }
 }

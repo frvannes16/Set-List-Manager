@@ -7,11 +7,21 @@ package com.example.franklin.setlistmanager.helpers;
 public class Song {
 
     private String name;
-    int order = 0;
+    private int bpm;
 
-    public Song(String name, int order) {
+    public Song() {
+    }
+
+    public Song(String name, int bpm) {
         this.name = name;
-        this.order = order;
-        // TODO: BPM
+        this.bpm = bpm;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getBpm() {
+        return bpm;
     }
 }

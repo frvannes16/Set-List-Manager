@@ -7,11 +7,13 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.franklin.setlistmanager.R;
 import com.example.franklin.setlistmanager.helpers.SetList;
 import com.firebase.ui.database.FirebaseListAdapter;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
@@ -20,6 +22,7 @@ public class SetlistListActivity extends AppCompatActivity
     implements AdapterView.OnItemClickListener{
 
     public static final String SETLIST_REF = "SETLIST_REF";
+    public static final String USER_REF = "USER_REF";
     private String TAG = "SETLIST_LIST_ACTIVITY";
 
     // Firebase
@@ -41,7 +44,13 @@ public class SetlistListActivity extends AppCompatActivity
         // Firebase setup
         database = FirebaseDatabase.getInstance();
         myRef = database.getReference("setlists");
-        Query userSetLists = myRef.child(FirebaseAuth.getInstance().getCurrentUser().getUid());
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null){
+            Toast.makeText(this, "You are not logged in.", Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(this, LoginActivity.class);
+            startActivity(intent);
+        }
+        Query userSetLists = myRef.child(user.getUid());
 
         // UI setup
         mSetlistLV = (ListView) findViewById(R.id.setlist_LV);
@@ -65,9 +74,11 @@ public class SetlistListActivity extends AppCompatActivity
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        String refString = mAdapter.getRef(position).toString();
+        String setlistref = mAdapter.getRef(position).getKey();
+        String userref = mAdapter.getRef(position).getParent().getKey();
         Intent intent = new Intent(this, SetlistActivity.class);
-        intent.putExtra(SETLIST_REF, refString);
+        intent.putExtra(SETLIST_REF, setlistref);
+        intent.putExtra(USER_REF, userref);
         startActivity(intent);
     }
 
