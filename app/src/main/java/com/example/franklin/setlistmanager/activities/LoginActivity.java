@@ -128,7 +128,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     @Override
     protected void onStop() {
         super.onStop();
-        if(mAuthListener != null) {
+        if (mAuthListener != null) {
             mAuth.removeAuthStateListener(mAuthListener);
         }
     }
@@ -141,7 +141,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         getLoaderManager().initLoader(0, null, this);
     }
 
-    private void openSetListActivity(){
+    private void openSetListActivity() {
         Intent next = new Intent(this, SetlistListActivity.class);
         startActivity(next);
     }
@@ -190,7 +190,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private void attemptLogin() {
         if (mAuth.getCurrentUser() != null) {
             Log.d(TAG, "onAuthStateChanged:signed_in:" + mAuth.getCurrentUser().getUid());
-            Log.d(TAG, "onAuthStateChanged:signed_in:" + mAuth.getCurrentUser().getEmail());
             openSetListActivity();
             return;
         }
@@ -207,7 +206,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         View focusView = null;
 
         // Check for a valid password, if the user entered one.
-        if (!TextUtils.isEmpty(password) && !isPasswordValid(password)) {
+        if (TextUtils.isEmpty(password) || !isPasswordValid(password)) {
             mPasswordView.setError(getString(R.string.error_invalid_password));
             focusView = mPasswordView;
             cancel = true;
@@ -243,49 +242,51 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                             // the auth state listener will be notified and logic to handle the
                             // signed in user can be handled in the listener.
                             if (!task.isSuccessful()) {
-                                Log.w(TAG, "signInWithEmail:failed", task.getException());
+                                // TODO: handle this better so that the create user isn't ran.
                             } else {
                                 showProgress(false);
                                 openSetListActivity();
-                            }
+                                finish();
 
+                            }
                         }
                     });
 
             // Check if the user could sign in, otherwise, we create the user.
             // Create user
+
             mAuth.createUserWithEmailAndPassword(email, password)
                     .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                @Override
-                public void onComplete(@NonNull Task<AuthResult> task) {
-                    Log.d(TAG, "createUserWithEmail:onComplete:" + task.isSuccessful());
+                        @Override
+                        public void onComplete(@NonNull Task<AuthResult> task) {
+                            Log.d(TAG, "createUserWithEmail:onComplete:" + task.isSuccessful());
 
-                    // If sign in fails, display a message to the user. If signin succeeds
-                    // the auth state listener will be notified and logic to handle the sign in
-                    // user can be handled in the listener.\
-                    if (!task.isSuccessful()){
-                        Toast.makeText(
-                                LoginActivity.this,
-                                R.string.auth_failed,
-                                Toast.LENGTH_LONG)
-                                .show();
-                    } else {
-                        showProgress(false);
-                        openSetListActivity();
-                    }
-                }
-            });
+                            // If sign in fails, display a message to the user. If signin succeeds
+                            // the auth state listener will be notified and logic to handle the sign in
+                            // user can be handled in the listener.\
+                            if (!task.isSuccessful()) {
+                                Toast.makeText(
+                                        LoginActivity.this,
+                                        R.string.auth_failed,
+                                        Toast.LENGTH_LONG)
+                                        .show();
+                            } else {
+                                showProgress(false);
+                                openSetListActivity();
+                                finish();
+                            }
+                        }
+                    });
             showProgress(false);
+
         }
     }
 
     private boolean isEmailValid(String email) {
-        //TODO: Replace this with your own logic
-        return email.contains("@");
+        return email.contains("@") && !email.isEmpty();
     }
 
     private boolean isPasswordValid(String password) {
-        //TODO: Replace this with your own logic
         return password.length() > 4;
     }
 

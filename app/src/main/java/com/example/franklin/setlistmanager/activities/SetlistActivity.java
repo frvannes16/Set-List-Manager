@@ -6,13 +6,18 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.franklin.setlistmanager.R;
+import com.example.franklin.setlistmanager.helpers.AuthHelper;
 import com.example.franklin.setlistmanager.helpers.MetronomeTask;
 import com.example.franklin.setlistmanager.helpers.Song;
 import com.firebase.ui.database.FirebaseListAdapter;
@@ -79,9 +84,29 @@ public class SetlistActivity extends AppCompatActivity
         mSongsLV.setOnItemClickListener(this);
         mSongsLV.setOnItemLongClickListener(this);
 
+    }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.setlist_menu, menu);
+        return true;
+    }
 
-
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle item selected.
+        switch(item.getItemId()){
+            case R.id.menu_edit:
+                Toast.makeText(this, "Edit!", Toast.LENGTH_SHORT).show();
+                return true;
+            case R.id.menu_logout:
+                Toast.makeText(this, "Logged out", Toast.LENGTH_SHORT).show();
+                AuthHelper.logout(this);
+                return true;
+            default:
+                return false;
+        }
     }
 
     public void addSong(View view) {

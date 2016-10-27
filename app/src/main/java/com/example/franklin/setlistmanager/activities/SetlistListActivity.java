@@ -4,6 +4,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -11,6 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.franklin.setlistmanager.R;
+import com.example.franklin.setlistmanager.helpers.AuthHelper;
 import com.example.franklin.setlistmanager.helpers.SetList;
 import com.firebase.ui.database.FirebaseListAdapter;
 import com.google.firebase.auth.FirebaseAuth;
@@ -68,6 +72,32 @@ public class SetlistListActivity extends AppCompatActivity
     protected void onDestroy() {
         super.onDestroy();
         mAdapter.cleanup();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.setlist_list_menu, menu);  // substitute in our custom menu.
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle item selected.
+        switch(item.getItemId()){
+            case R.id.menu_help:
+                Toast.makeText(this, "Help!", Toast.LENGTH_LONG).show();
+                return true;
+            case R.id.menu_share:
+                Toast.makeText(this, "Share!", Toast.LENGTH_LONG).show();
+                return true;
+            case R.id.menu_logout:
+                AuthHelper.logout(this);
+                Toast.makeText(this, "Logged out", Toast.LENGTH_SHORT).show();
+                return true;
+            default:
+                return false;
+        }
     }
 
     public void addSetlist(View view) {

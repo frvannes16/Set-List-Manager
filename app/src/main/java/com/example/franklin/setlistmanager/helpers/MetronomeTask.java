@@ -50,6 +50,16 @@ public class MetronomeTask implements Runnable {
     }
 
 
+    /* The way we are able to keep time is due to how the tone is generated. Instead of playing
+     * the tone and then forcing the thread to sleep or wait for the time interval between beats
+      * to pass, we are instead just passing silence to the stream for the exact amount of bits
+      * required to fill the empty space. While this leads to perfect timing via noise, it
+      * makes it incredibly hard for us to time anything on the UI thread to it since we don't
+      * have any way to indicate to the UI thread when the tone is being played.
+      *
+      * One option could be inheriting the AudioTrack class into its own class and commandeering
+      * the play control so that after every x bits played it notifies a listener on the UI branch.
+      * */
     private class Tone {
         static final int SAMPLE_RATE = 44100;
         // 44100 bits/second bit rate
@@ -82,11 +92,14 @@ public class MetronomeTask implements Runnable {
         }
 
         void startMetronome() {
+            // Generate the noises
             mBlip = getNoise(LOW_TONE_FREQUENCY, interval);
             mBleep = getNoise(HIGH_TONE_FREQUENCY, interval);
             mAudioTrack.setStereoVolume(AudioTrack.getMaxVolume(), AudioTrack.getMaxVolume());
             Log.d(TAG, "Playing");
+            // Open the audio stream
             mAudioTrack.play();
+            // Write to the audio stream
             for (int i = 0; i < num * NUM_MEASURES; i++) {
                 short[] mBuffer = (i % num == 0) ? mBleep : mBlip;
                 mAudioTrack.write(mBuffer, 0, mBuffer.length);
