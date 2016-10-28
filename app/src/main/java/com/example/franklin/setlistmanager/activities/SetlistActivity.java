@@ -2,13 +2,18 @@ package com.example.franklin.setlistmanager.activities;
 
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Rect;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.DragEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.VelocityTracker;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.EditText;
@@ -16,6 +21,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.franklin.setlistmanager.BuildConfig;
 import com.example.franklin.setlistmanager.R;
 import com.example.franklin.setlistmanager.helpers.AuthHelper;
 import com.example.franklin.setlistmanager.helpers.MetronomeTask;
@@ -25,13 +31,12 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 
+import java.util.Calendar;
 import java.util.Locale;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class SetlistActivity extends AppCompatActivity
-        implements AdapterView.OnItemClickListener,
-        AdapterView.OnItemLongClickListener {
+public class SetlistActivity extends AppCompatActivity {
 
     private static final String TAG = "SetListActivity:";
     public static final int REQUEST_CODE = 1001;
@@ -81,8 +86,9 @@ public class SetlistActivity extends AppCompatActivity
 
         mAdapter = new SongListAdapter(setlistRef);
         mSongsLV.setAdapter(mAdapter);
-        mSongsLV.setOnItemClickListener(this);
-        mSongsLV.setOnItemLongClickListener(this);
+//        mSongsLV.setOnItemClickListener(this);
+//        mSongsLV.setOnItemLongClickListener(this);
+        mSongsLV.setOnTouchListener(new MyOnTouchListener());
 
     }
 
@@ -96,7 +102,7 @@ public class SetlistActivity extends AppCompatActivity
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle item selected.
-        switch(item.getItemId()){
+        switch (item.getItemId()) {
             case R.id.menu_edit:
                 Toast.makeText(this, "Edit!", Toast.LENGTH_SHORT).show();
                 return true;
@@ -120,10 +126,10 @@ public class SetlistActivity extends AppCompatActivity
         setlistRef.push().setValue(newSong);
     }
 
-    @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+    public void onItemClick(View view, int position) {
         // if executor already exists, then stop it.
-        if (executor != null){
+        if (executor != null) {
             executor.shutdown();
         }
 
@@ -135,9 +141,9 @@ public class SetlistActivity extends AppCompatActivity
 
     }
 
-    @Override
-    public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-        if (executor != null){
+
+    public boolean onItemLongClick(View view, int position) {
+        if (executor != null) {
             executor.shutdown();
         }
         final DatabaseReference songToDeleteRef = mAdapter.getRef(position);
@@ -178,6 +184,94 @@ public class SetlistActivity extends AppCompatActivity
             ((TextView) v.findViewById(android.R.id.text2)).setText(
                     String.format(Locale.US, "BPM: %d", song.getBpm())
             );
+        }
+    }
+
+    private class MyOnTouchListener implements View.OnTouchListener {
+
+        private static final int MAX_CLICK_DURATION = 200;
+        private static final int LONG_CLICK_DURATION = 300;
+        private long startClickTime;
+        private boolean waiting = false;  // Waiting for the end of the click.
+        private View targetView;
+
+
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            // TODO: invoke click animations.
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    if (!waiting) {
+                        Log.d(TAG, "onTouch: Action Down");
+                        // Check start click time to see if click.
+                        targetView = getListItemFromEvent(mSongsLV, event);
+                        if (targetView == null) {
+                            return false;
+                        } else {
+                            startClickTime = Calendar.getInstance().getTimeInMillis();
+                            waiting = true;
+                        }
+                        return true;
+                    }
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    // TODO: determine whether dragging or not. Use VelocityTracker, addMovement.
+                    if (waiting) {
+                        long holdDuration = Calendar.getInstance().getTimeInMillis() - startClickTime;
+                        if (holdDuration > LONG_CLICK_DURATION) {
+                            Log.d(TAG, "onTouch: Long click");
+                            onItemLongClick(targetView, mSongsLV.getPositionForView(targetView));
+                            reset();
+                            return true;
+                        }
+                    }
+                    return false;
+                case MotionEvent.ACTION_UP:
+                    long clickDuration = Calendar.getInstance().getTimeInMillis() - startClickTime;
+                    if (clickDuration < MAX_CLICK_DURATION) {
+                        Log.d(TAG, "onTouch: Action Up");
+                        onItemClick(targetView, mSongsLV.getPositionForView(targetView));
+                    }
+                    reset();
+                    return true;
+            }
+            return false;
+        }
+
+        void reset() {
+            startClickTime = 0;
+            waiting = false;
+            targetView = null;
+        }
+
+        @Nullable
+        private View getListItemFromEvent(ListView parent, MotionEvent event) {
+            // Find the targeted view.
+            Rect rect = new Rect();
+            int childCount = parent.getChildCount();
+
+            // First check. See if touch coordinate is passed the last list child.
+            View lastChild = parent.getChildAt(childCount - 1);
+            Rect lastChildRect = new Rect();
+            lastChild.getHitRect(lastChildRect);
+            float X = event.getX();
+            float Y = event.getY();
+            if (Y > lastChildRect.bottom && X > lastChildRect.right) {
+                // Out of ListView parent bounds
+                return null;
+            }
+
+            // Within bounds. See which item it's referring to.
+            View child;
+            for (int i = 0; i < childCount; i++) {
+                child = parent.getChildAt(i);
+                child.getHitRect(rect);
+                if (rect.contains((int) X, (int) Y)) {
+                    return child;  // Found the targeted child.
+                }
+            }
+
+            return null;  // Couldn't find the child.
         }
     }
 }

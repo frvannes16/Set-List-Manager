@@ -30,15 +30,8 @@ public class SetlistListActivity extends AppCompatActivity
     public static final String USER_REF = "USER_REF";
     private String TAG = "SETLIST_LIST_ACTIVITY";
 
-    // Firebase
-    private FirebaseDatabase database;
-    private DatabaseReference myRef;
-
     // Data
     private SetListAdapter mAdapter;
-
-    // UI
-    private ListView mSetlistLV;
 
 
     @Override
@@ -47,8 +40,8 @@ public class SetlistListActivity extends AppCompatActivity
         setContentView(R.layout.activity_setlist_list);
 
         // Firebase setup
-        database = FirebaseDatabase.getInstance();
-        myRef = database.getReference("setlists");
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference myRef = database.getReference("setlists");
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null){
             Toast.makeText(this, "You are not logged in.", Toast.LENGTH_LONG).show();
@@ -60,7 +53,7 @@ public class SetlistListActivity extends AppCompatActivity
         Query userSetLists = myRef.child(user.getUid());
 
         // UI setup
-        mSetlistLV = (ListView) findViewById(R.id.setlist_LV);
+        ListView mSetlistLV = (ListView) findViewById(R.id.setlist_LV);
         mSetlistLV.setOnItemClickListener(this);
         mAdapter = new SetListAdapter(userSetLists);
 

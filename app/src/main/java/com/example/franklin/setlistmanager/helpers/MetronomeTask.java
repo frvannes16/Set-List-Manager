@@ -12,6 +12,8 @@ import android.util.Log;
 
 public class MetronomeTask implements Runnable {
 
+    // TODO: Create kill() to clear the buffer. See http://stackoverflow.com/a/9458785/3769032
+
     private static final int NUM_MEASURES = 4;
     private static String TAG = "MetronomeTask:";
     private static final int LOW_TONE_FREQUENCY = 1500;
@@ -107,6 +109,8 @@ public class MetronomeTask implements Runnable {
             mAudioTrack.release();
             mAudioTrack.stop();
         }
+
+
 
     }
 }
